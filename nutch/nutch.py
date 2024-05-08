@@ -692,7 +692,7 @@ class Nutch:
         return self.server.call('get', '/admin')
 
     def stopServer(self):
-        return self.server.call('post', '/admin/stop', headers=TextAcceptHeader)
+        return self.server.call('get', '/admin/stop')
 
     def configGetList(self):
         return self.Configs().list()

@@ -425,15 +425,9 @@ class SeedClient():
         :return: the created Seed object
         """
 
-        seedUrl = lambda uid, url: {"id": uid, "url": url}
-
-        if not isinstance(seedList,tuple):
-            seedList = (seedList,)
-
         seedListData = {
-            "id": "12345",
             "name": sid,
-            "seedUrls": [seedUrl(uid, url) for uid, url in enumerate(seedList)]
+            "seedUrls": seedList
         }
 
         # As per resolution of https://issues.apache.org/jira/browse/NUTCH-2123

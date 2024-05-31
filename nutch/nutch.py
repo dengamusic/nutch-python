@@ -431,7 +431,6 @@ class JobClient:
         statsArgs = {'confId': self.confId, 'crawlId': self.crawlId, 'type': 'stats', 'args': {}}
         return self.server.call('post', '/db/crawldb', statsArgs)
 
-
 class RegexClient():
 
     def __init__(self, server):
@@ -449,14 +448,14 @@ class RegexClient():
         :param regexList: the list of regexs to use
         :return: the created regex object
         """
-
+        file_name = "regex-urlfilter-{}.txt"
         regexListData = {
-            "name": rid,
+            "name": file_name,
             "patterns": regexList
         }
 
         self.server.call('post', "/regex/create", regexListData, TextAcceptHeader)
-        new_regex = Regex(rid, "conf/{}".format(rid), self.server)
+        new_regex = Regex(file_name, "conf/{}".format(file_name), self.server)
         return new_regex
 
     def delete(self, rid):
@@ -487,14 +486,15 @@ class IndexerClient():
         :param content: the content of the .xml configuration file
         :return: the created indexer object
         """
+        file_name = "index-writers-{}.xml"
 
         indexerConfig = {
-            "name": iid,
+            "name": file_name,
             "content": content
         }
 
         self.server.call('post', "/index-writer/create", indexerConfig, TextAcceptHeader)
-        new_indexer = Indexer(iid, "conf/{}".format(iid), self.server)
+        new_indexer = Indexer(file_name, "conf/{}".format(file_name), self.server)
         return new_indexer
 
     def delete(self, iid):
@@ -507,6 +507,7 @@ class IndexerClient():
             "name": iid
         }
         self.server.call("delete", "/index-writer/delete", indexer)
+
 
 class SeedClient():
 

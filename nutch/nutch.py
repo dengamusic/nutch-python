@@ -448,7 +448,7 @@ class RegexClient():
         :param regexList: the list of regexs to use
         :return: the created regex object
         """
-        file_name = "regex-urlfilter-{}.txt"
+        file_name = "regex-urlfilter-{}.txt".format(rid)
         regexListData = {
             "name": file_name,
             "patterns": regexList
@@ -486,7 +486,7 @@ class IndexerClient():
         :param content: the content of the .xml configuration file
         :return: the created indexer object
         """
-        file_name = "index-writers-{}.xml"
+        file_name = "index-writers-{}.xml".format(iid)
 
         indexerConfig = {
             "name": file_name,

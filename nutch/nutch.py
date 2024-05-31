@@ -156,7 +156,7 @@ class Server:
                 raise error
             else:
                 warn('Nutch server returned status:', resp.status_code)
-        if forceText or 'content-type' not in resp.headers or resp.headers['content-type'] == 'text/plain':
+        if forceText or 'content-type' not in resp.headers or resp.headers['content-type'] == 'text/plain' or resp.headers['content-type'] == 'text/plain; charset=utf-8':
             if Verbose:
                 echo2("Response text:", resp.text)
             return resp.text

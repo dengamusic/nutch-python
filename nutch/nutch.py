@@ -448,14 +448,13 @@ class RegexClient():
         :param regexList: the list of regexs to use
         :return: the created regex object
         """
-        file_name = "regex-urlfilter-{}.txt".format(rid)
         regexListData = {
-            "name": file_name,
+            "name": rid,
             "patterns": regexList
         }
 
-        self.server.call('post', "/regex/create", regexListData, TextAcceptHeader)
-        new_regex = Regex(file_name, "conf/{}".format(file_name), self.server)
+        regex_path = self.server.call('post', "/regex/create", regexListData, TextAcceptHeader)
+        new_regex = Regex(rid, regex_path, self.server)
         return new_regex
 
     def delete(self, rid):
@@ -486,15 +485,13 @@ class IndexerClient():
         :param content: the content of the .xml configuration file
         :return: the created indexer object
         """
-        file_name = "index-writers-{}.xml".format(iid)
-
         indexerConfig = {
-            "name": file_name,
+            "name": iid,
             "content": content
         }
 
-        self.server.call('post', "/index-writer/create", indexerConfig, TextAcceptHeader)
-        new_indexer = Indexer(file_name, "conf/{}".format(file_name), self.server)
+        indexer_path = self.server.call('post', "/index-writer/create", indexerConfig, TextAcceptHeader)
+        new_indexer = Indexer(iid, indexer_path, self.server)
         return new_indexer
 
     def delete(self, iid):

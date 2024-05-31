@@ -273,6 +273,18 @@ class Regex(IdEqualityMixin):
         self.regexPath = regexPath
         self.server = server
 
+class Indexer(IdEqualityMixin):
+    """
+    Representation of a Nutch indexer
+
+    Use IndexerClient to create a new one or delete an old one
+    """
+
+    def __init__(self, iid, indexerPath, server):
+        self.id = iid
+        self.indexerPath = indexerPath
+        self.server = server
+
 
 class ConfigClient:
     def __init__(self, server):
@@ -439,14 +451,62 @@ class RegexClient():
         """
 
         regexListData = {
-            "filename": rid,
+            "name": rid,
             "patterns": regexList
         }
 
-        regexPath = self.server.call('post', "/regex/create", regexListData, TextAcceptHeader)
-        new_regex = Regex(rid, regexPath, self.server)
+        self.server.call('post', "/regex/create", regexListData, TextAcceptHeader)
+        new_regex = Regex(rid, "conf/{}".format(rid), self.server)
         return new_regex
-    
+
+    def delete(self, rid):
+        """
+        Delete regex (rid) containing a list of regex URLs
+        
+        :param rid: the name of the regex list
+        """
+        regex = {
+            "name" : rid
+        }
+        self.server.call("delete", "/regex/delete", regex)
+
+class IndexerClient():
+
+    def __init__(self, server):
+        """Nutch Indexer client
+
+        Client for uploading regex lists to Nutch
+        """
+        self.server = server
+
+    def create(self, iid, content):
+        """
+        Create a new named (iid) indexer from a .xml file
+
+        :param iid: the name to assign to the new indexer 
+        :param content: the content of the .xml configuration file
+        :return: the created indexer object
+        """
+
+        indexerConfig = {
+            "name": iid,
+            "content": content
+        }
+
+        self.server.call('post', "/index-writer/create", indexerConfig, TextAcceptHeader)
+        new_indexer = Indexer(iid, "conf/{}".format(iid), self.server)
+        return new_indexer
+
+    def delete(self, iid):
+        """
+        Delete indexer
+        
+        :param iid: the name of the indexer
+        """
+        indexer = {
+            "name": iid
+        }
+        self.server.call("delete", "/index-writer/delete", indexer)
 
 class SeedClient():
 

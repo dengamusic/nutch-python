@@ -261,6 +261,19 @@ class Seed(IdEqualityMixin):
         self.server = server
 
 
+class Regex(IdEqualityMixin):
+    """
+    Representation of an active Nutch regex list
+
+    Use RegexClient to get a list of regex lists or create a new one
+    """
+
+    def __init__(self, rid, regexPath, server):
+        self.id = rid
+        self.regexPath = regexPath
+        self.server = server
+
+
 class ConfigClient:
     def __init__(self, server):
         """Nutch Config client
@@ -407,6 +420,34 @@ class JobClient:
         return self.server.call('post', '/db/crawldb', statsArgs)
 
 
+class RegexClient():
+
+    def __init__(self, server):
+        """Nutch Regex client
+
+        Client for uploading regex lists to Nutch
+        """
+        self.server = server
+
+    def create(self, rid, regexList):
+        """
+        Create a new named (rid) regex from a list of regex URLs
+
+        :param sid: the name to assign to the new regex list
+        :param regexList: the list of regexs to use
+        :return: the created regex object
+        """
+
+        regexListData = {
+            "filename": rid,
+            "patterns": regexList
+        }
+
+        regexPath = self.server.call('post', "/regex", regexListData, TextAcceptHeader)
+        new_regex = Regex(rid, regexPath, self.server)
+        return new_regex
+    
+
 class SeedClient():
 
     def __init__(self, server):
@@ -431,7 +472,7 @@ class SeedClient():
         }
 
         # As per resolution of https://issues.apache.org/jira/browse/NUTCH-2123
-        seedPath = self.server.call('post', "/seed/create", seedListData, TextAcceptHeader)
+        seedPath = self.server.call('post', "/seed", seedListData, TextAcceptHeader)
         new_seed = Seed(sid, seedPath, self.server)
         return new_seed
 

@@ -553,7 +553,7 @@ class SeedClient():
         return self.create(sid, tuple(urls))
 
 class CrawlClient():
-    def __init__(self, server, seed, jobClient, rounds, index):
+    def __init__(self, server, seed, jobClient, rounds, index, **args):
         """Nutch Crawl manager
 
         High-level Nutch client for managing crawls.
@@ -579,8 +579,9 @@ class CrawlClient():
         self.sleepTime = 1
         self.enable_index = index
 
+    
         # dispatch injection
-        self.currentJob = self.jobClient.inject(seed)
+        self.currentJob = self.jobClient.inject(seed, **args)
 
     def _nextJob(self, job, nextRound=True):
         """
@@ -783,7 +784,8 @@ class Nutch:
 
         if type(seed) != Seed:
             seed = seedClient.create(jobClient.crawlId + '_seeds', seed)
-        return CrawlClient(self.server, seed, jobClient, rounds, index)
+        
+        return CrawlClient(self.server, seed, jobClient, rounds, index, **self.job_parameters['args'])
 
     ## convenience functions
     ## TODO: Decide if any of these should be deprecated.

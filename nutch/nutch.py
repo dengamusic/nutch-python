@@ -156,7 +156,7 @@ class Server:
                 raise error
             else:
                 warn('Nutch server returned status:', resp.status_code)
-        if forceText or 'content-type' not in resp.headers or resp.headers['content-type'] == 'text/plain':
+        if forceText or 'content-type' not in resp.headers or resp.headers['content-type'] == 'text/plain' or resp.headers['content-type'] == 'text/plain; charset=utf-8':
             if Verbose:
                 echo2("Response text:", resp.text)
             return resp.text
@@ -258,6 +258,31 @@ class Seed(IdEqualityMixin):
     def __init__(self, sid, seedPath, server):
         self.id = sid
         self.seedPath = seedPath
+        self.server = server
+
+
+class Regex(IdEqualityMixin):
+    """
+    Representation of an active Nutch regex list
+
+    Use RegexClient to get a list of regex lists or create a new one
+    """
+
+    def __init__(self, rid, regexPath, server):
+        self.id = rid
+        self.regexPath = regexPath
+        self.server = server
+
+class Indexer(IdEqualityMixin):
+    """
+    Representation of a Nutch indexer
+
+    Use IndexerClient to create a new one or delete an old one
+    """
+
+    def __init__(self, iid, indexerPath, server):
+        self.id = iid
+        self.indexerPath = indexerPath
         self.server = server
 
 
@@ -406,6 +431,80 @@ class JobClient:
         statsArgs = {'confId': self.confId, 'crawlId': self.crawlId, 'type': 'stats', 'args': {}}
         return self.server.call('post', '/db/crawldb', statsArgs)
 
+class RegexClient():
+
+    def __init__(self, server):
+        """Nutch Regex client
+
+        Client for uploading regex lists to Nutch
+        """
+        self.server = server
+
+    def create(self, rid, regexList):
+        """
+        Create a new named (rid) regex from a list of regex URLs
+
+        :param sid: the name to assign to the new regex list
+        :param regexList: the list of regexs to use
+        :return: the created regex object
+        """
+        regexListData = {
+            "name": rid,
+            "patterns": regexList
+        }
+
+        regex_path = self.server.call('post', "/regex/create", regexListData, TextAcceptHeader)
+        new_regex = Regex(rid, regex_path, self.server)
+        return new_regex
+
+    def delete(self, rid):
+        """
+        Delete regex (rid) containing a list of regex URLs
+        
+        :param rid: the name of the regex list
+        """
+        regex = {
+            "name" : rid
+        }
+        self.server.call("delete", "/regex/delete", regex)
+
+class IndexerClient():
+
+    def __init__(self, server):
+        """Nutch Indexer client
+
+        Client for uploading regex lists to Nutch
+        """
+        self.server = server
+
+    def create(self, iid, content):
+        """
+        Create a new named (iid) indexer from a .xml file
+
+        :param iid: the name to assign to the new indexer 
+        :param content: the content of the .xml configuration file
+        :return: the created indexer object
+        """
+        indexerConfig = {
+            "name": iid,
+            "content": content
+        }
+
+        indexer_path = self.server.call('post', "/index-writer/create", indexerConfig, TextAcceptHeader)
+        new_indexer = Indexer(iid, indexer_path, self.server)
+        return new_indexer
+
+    def delete(self, iid):
+        """
+        Delete indexer
+        
+        :param iid: the name of the indexer
+        """
+        indexer = {
+            "name": iid
+        }
+        self.server.call("delete", "/index-writer/delete", indexer)
+
 
 class SeedClient():
 
@@ -425,15 +524,9 @@ class SeedClient():
         :return: the created Seed object
         """
 
-        seedUrl = lambda uid, url: {"id": uid, "url": url}
-
-        if not isinstance(seedList,tuple):
-            seedList = (seedList,)
-
         seedListData = {
-            "id": "12345",
             "name": sid,
-            "seedUrls": [seedUrl(uid, url) for uid, url in enumerate(seedList)]
+            "seedUrls": seedList
         }
 
         # As per resolution of https://issues.apache.org/jira/browse/NUTCH-2123
@@ -460,7 +553,7 @@ class SeedClient():
         return self.create(sid, tuple(urls))
 
 class CrawlClient():
-    def __init__(self, server, seed, jobClient, rounds, index):
+    def __init__(self, server, seed, jobClient, rounds, index, **args):
         """Nutch Crawl manager
 
         High-level Nutch client for managing crawls.
@@ -486,8 +579,9 @@ class CrawlClient():
         self.sleepTime = 1
         self.enable_index = index
 
+    
         # dispatch injection
-        self.currentJob = self.jobClient.inject(seed)
+        self.currentJob = self.jobClient.inject(seed, **args)
 
     def _nextJob(self, job, nextRound=True):
         """
@@ -690,7 +784,8 @@ class Nutch:
 
         if type(seed) != Seed:
             seed = seedClient.create(jobClient.crawlId + '_seeds', seed)
-        return CrawlClient(self.server, seed, jobClient, rounds, index)
+        
+        return CrawlClient(self.server, seed, jobClient, rounds, index, **self.job_parameters['args'])
 
     ## convenience functions
     ## TODO: Decide if any of these should be deprecated.
@@ -698,7 +793,7 @@ class Nutch:
         return self.server.call('get', '/admin')
 
     def stopServer(self):
-        return self.server.call('post', '/admin/stop', headers=TextAcceptHeader)
+        return self.server.call('get', '/admin/stop')
 
     def configGetList(self):
         return self.Configs().list()
